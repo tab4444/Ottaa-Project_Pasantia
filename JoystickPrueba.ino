@@ -2,10 +2,16 @@
 
 int yPin = A2;
 int xPin = A1;
-int btn1Pin = 6;
+int btn1Pin = 10;
 int lastBtn1Press;
 bool btn1Pressed;
-int sensPin = A5;
+int sensPin = A3;
+
+int btn2Pin = 16;
+int lastBtn2Press;
+bool btn2Pressed;
+
+bool enableMouse = false;
 
 int yZero, xZero;
 int yValue, xValue;
@@ -13,7 +19,7 @@ int sensValue;
 int yMov, xMov;
 int mouseClick = 0;
 
-int smoothing=4;
+int smoothing=0;
 
 void setup() {
 
@@ -28,23 +34,33 @@ void setup() {
   xZero = analogRead(xPin);
   xValue = 0;
   yValue = 0;
+
+  Mouse.begin();
 }
 
 void loop() {
-  yValue = posValues(yValue, smoothing ,getValue(yPin, yZero));
-  xValue = posValues(xValue, smoothing ,getValue(xPin, xZero));
+  if(enableMouse){
+    yValue = posValues(yValue, smoothing ,getValue(yPin, yZero));
+    xValue = posValues(xValue, smoothing ,getValue(xPin, xZero));
+    
+    sensValue = getValue(sensPin, 0, 0, 1023, 11, 200);
+    //sensValue = 100;
+    xMov=calcMov(xValue,-10,10,sensValue);  
+    yMov=calcMov(yValue,-10,10,sensValue);  
   
-  sensValue = getValue(sensPin, 0, 0, 1023, 11, 200);
-  //sensValue = 100;
-  xMov=calcMov(xValue,-10,10,sensValue);  
-  yMov=calcMov(yValue,-10,10,sensValue);  
-  
-  movMouse(true, "proa",-xMov,yMov);
-  
-  if(checkClickBtn(digitalRead(btn1Pin), LOW, lastBtn1Press, 250)){
-    Serial.println("click,simple");
-    lastBtn1Press = millis();
+    movMouse(false, "proa",-xMov,yMov);
+    if(checkClickBtn(digitalRead(btn1Pin), LOW) && !Mouse.isPressed()){
+      Mouse.press();
+    }
+    else if(!checkClickBtn(digitalRead(btn1Pin), LOW) && Mouse.isPressed()){
+      Mouse.release(); 
+      }
   }
+  if(checkClickBtn(digitalRead(btn2Pin), LOW)){
+      enableMouse = !enableMouse;
+      lastBtn2Press = millis();
+    }
+  
 }
 
 int posValues(int value, int smoothing, int realValue){
@@ -54,8 +70,8 @@ int posValues(int value, int smoothing, int realValue){
     return realValue;
   }
 
-boolean checkClickBtn(int btnValue, int activationValue, int lastBtnPress, int btnPressLimit){
-  if(btnValue == activationValue && millis()-lastBtnPress > btnPressLimit){
+boolean checkClickBtn(int btnValue, int activationValue){
+  if(btnValue == activationValue ){
     return true;
   }
   return false;
@@ -66,7 +82,7 @@ int movMouse(bool senSerial, String indicator,int xMov,int yMov){
      Serial.println(indicator+ "," + String (xMov) +","+String(yMov));
     }
     else{
-      //aca vendria el movimiento del mouse
+      Mouse.move(xMov, yMov, 0);
       }
   
   }
