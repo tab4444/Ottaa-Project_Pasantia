@@ -43,7 +43,8 @@ void loop() {
     yValue = posValues(yValue, smoothing ,getValue(yPin, yZero));
     xValue = posValues(xValue, smoothing ,getValue(xPin, xZero));
     
-    sensValue = getValue(sensPin, 0, 0, 1023, 11, 200);
+    sensValue = getValue(sensPin, 0, 0, 1023, 250, 400);
+    Serial.println(sensValue);
     //sensValue = 100;
     xMov=calcMov(xValue,-10,10,sensValue);  
     yMov=calcMov(yValue,-10,10,sensValue);  
