@@ -13,35 +13,46 @@ int sensValue;
 int yMov, xMov;
 int mouseClick = 0;
 
+int smoothing=4;
+
 void setup() {
 
   Serial.begin(9600);
   pinMode(xPin, INPUT);
   pinMode(yPin, INPUT);
-  pinMode(btn1Pin, INPUT);
+  pinMode(btn1Pin, INPUT_PULLUP);
   pinMode(sensPin, INPUT);
-  digitalWrite(btn1Pin, LOW);
+  digitalWrite(btn1Pin, HIGH);
   delay(1000);
   yZero = analogRead(yPin);
   xZero = analogRead(xPin);
+  xValue = 0;
+  yValue = 0;
 }
 
 void loop() {
-  yValue = getValue(yPin, yZero);
-  xValue = getValue(xPin, xZero);
-  sensValue = getValue(sensPin, 0, 0, 1023, 11, 200);
+  yValue = posValues(yValue, smoothing ,getValue(yPin, yZero));
+  xValue = posValues(xValue, smoothing ,getValue(xPin, xZero));
   
+  sensValue = getValue(sensPin, 0, 0, 1023, 11, 200);
+  //sensValue = 100;
   xMov=calcMov(xValue,-10,10,sensValue);  
   yMov=calcMov(yValue,-10,10,sensValue);  
   
-  //movMouse(true, "proa",-xMov,yMov);
-  Serial.println(digitalRead(btn1Pin));
+  movMouse(true, "proa",-xMov,yMov);
   
-  //if(checkClickBtn(digitalRead(btn1Pin), HIGH, lastBtn1Press, 100)){
-  //  Serial.println("click,simple");
-  //  lastBtn1Press = millis();
-  //}
+  if(checkClickBtn(digitalRead(btn1Pin), LOW, lastBtn1Press, 250)){
+    Serial.println("click,simple");
+    lastBtn1Press = millis();
+  }
 }
+
+int posValues(int value, int smoothing, int realValue){
+  if(smoothing != 0){
+     return (realValue - value) / smoothing;
+    }
+    return realValue;
+  }
 
 boolean checkClickBtn(int btnValue, int activationValue, int lastBtnPress, int btnPressLimit){
   if(btnValue == activationValue && millis()-lastBtnPress > btnPressLimit){
