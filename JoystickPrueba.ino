@@ -2,14 +2,21 @@
 
 int yPin = A2;
 int xPin = A1;
+
+//Switch click change
 int btn1Pin = 10;
-int lastBtn1Press;
 bool btn1Pressed;
+
+//sensibility
 int sensPin = A3;
 
+//Switch on/off
 int btn2Pin = 16;
-int lastBtn2Press;
 bool btn2Pressed;
+
+//Switch click
+int btnClickPin = 14;
+bool btnClickPressed;
 
 bool enableMouse = false;
 
@@ -18,8 +25,9 @@ int yValue, xValue;
 int sensValue;
 int yMov, xMov;
 int mouseClick = 0;
+int stateClick = 0;
 
-int smoothing=0;
+int smoothing=1;
 
 void setup() {
 
@@ -44,23 +52,23 @@ void loop() {
     xValue = posValues(xValue, smoothing ,getValue(xPin, xZero));
     
     sensValue = getValue(sensPin, 0, 0, 1023, 250, 400);
-    Serial.println(sensValue);
-    //sensValue = 100;
+
     xMov=calcMov(xValue,-10,10,sensValue);  
     yMov=calcMov(yValue,-10,10,sensValue);  
-  
-    movMouse(false, "proa",-xMov,yMov);
-    if(checkClickBtn(digitalRead(btn1Pin), LOW) && !Mouse.isPressed()){
-      Mouse.press();
-    }
-    else if(!checkClickBtn(digitalRead(btn1Pin), LOW) && Mouse.isPressed()){
-      Mouse.release(); 
-      }
+    
+    movMouse(false, "Valores: ",-xMov,yMov);
+
   }
+    doClick();
+  
   if(checkClickBtn(digitalRead(btn2Pin), LOW)){
       enableMouse = !enableMouse;
-      lastBtn2Press = millis();
     }
+
+  if(checkClickBtn(digitalRead(btn1Pin), LOW)){
+    stateClick++;
+    Serial.println("State is: " + stateClick);
+  }
   
 }
 
@@ -70,6 +78,53 @@ int posValues(int value, int smoothing, int realValue){
     }
     return realValue;
   }
+
+void doClick(){
+  switch(stateClick) {
+    case 1: 
+      //click izq
+        if(checkClickBtn(digitalRead(btnClickPin), LOW) && !Mouse.isPressed()){
+          Mouse.press();
+          Serial.println("Click izq");
+        }
+        else if(!checkClickBtn(digitalRead(btnClickPin), LOW) && Mouse.isPressed()){
+          Mouse.release(); 
+        }
+          
+      break;
+    case 2:
+      //click der
+      if(checkClickBtn(digitalRead(btnClickPin), LOW) && !Mouse.isPressed(MOUSE_RIGHT)){
+        Mouse.press(MOUSE_RIGHT);
+        Serial.println("Click der");
+      }
+      else if(!checkClickBtn(digitalRead(btnClickPin), LOW) && Mouse.isPressed(MOUSE_RIGHT)){
+        Mouse.release(MOUSE_RIGHT); 
+      }
+      
+      break;
+    case 3:
+      //scroll down
+      if(checkClickBtn(digitalRead(btnClickPin), LOW)){
+        Mouse.move(0,0,-1);
+        Serial.println("Scroll Down");
+      }
+      
+      break;
+    case 4:
+      //scroll up
+      if(checkClickBtn(digitalRead(btnClickPin), LOW) && !Mouse.isPressed()){
+        Mouse.move(0,0,1);
+        Serial.println("Scroll Up");
+      }
+ 
+      break;
+    default:
+      //desactivado
+      stateClick = 0;
+      break;
+  }  
+}
 
 boolean checkClickBtn(int btnValue, int activationValue){
   if(btnValue == activationValue ){
